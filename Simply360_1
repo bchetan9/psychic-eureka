@@ -1,0 +1,70 @@
+from collections import deque  # Import deque from collections for efficient queue operations
+
+class Task:
+    def __init__(self, id, duration):
+        self.id = id  # Unique identifier for the task
+        self.duration = duration  # Duration of the task
+        self.successors = []  # List to store IDs of successor tasks
+        self.predecessors = []  # List to store IDs of predecessor tasks
+        self.EST = 0  # Earliest Start Time, initialized to 0
+        self.EFT = 0  # Earliest Finish Time, initialized to 0
+        self.LST = float('inf')  # Latest Start Time, initialized to infinity
+        self.LFT = float('inf')  # Latest Finish Time, initialized to infinity
+
+def calculate_times(tasks):
+    task_map = {task.id: task for task in tasks}  # Create a dictionary to map task IDs to task objects
+    queue = deque([task for task in tasks if not task.predecessors])  # Initialize queue with tasks that have no predecessors
+    
+    while queue:
+        current = queue.popleft()  # Dequeue the first task
+        current.EFT = current.EST + current.duration  # Calculate Earliest Finish Time
+        
+        for succ_id in current.successors:  # Iterate over all successors of the current task
+            succ = task_map[succ_id]  # Get the successor task object
+            succ.EST = max(succ.EST, current.EFT)  # Update Earliest Start Time for the successor
+            succ.predecessors.remove(current.id)  # Remove current task from predecessor list of successor
+            if not succ.predecessors:  # If the successor has no more predecessors
+                queue.append(succ)  # Add the successor to the queue
+    
+    project_finish_time = max(task.EFT for task in tasks)  # Calculate the earliest project finish time
+    
+    for task in tasks:
+        if not task.successors:  # If the task has no successors
+            task.LFT = project_finish_time  # Set Latest Finish Time to the project finish time
+            task.LST = task.LFT - task.duration  # Calculate Latest Start Time
+    
+    queue = deque([task for task in tasks if not task.successors])  # Initialize queue with tasks that have no successors
+    
+    while queue:
+        current = queue.popleft()  # Dequeue the first task
+        
+        for pred_id in current.predecessors:  # Iterate over all predecessors of the current task
+            pred = task_map[pred_id]  # Get the predecessor task object
+            pred.LFT = min(pred.LFT, current.LST)  # Update Latest Finish Time for the predecessor
+            pred.LST = pred.LFT - pred.duration  # Calculate Latest Start Time for the predecessor
+            queue.append(pred)  # Add the predecessor to the queue
+
+if __name__ == "__main__":
+    tasks = [
+        Task('T_START', 0),  # Define start task with 0 duration
+        Task('T1', 5),  # Define task T1 with 5 duration
+        Task('T2', 3),  # Define task T2 with 3 duration
+        Task('T3', 2),  # Define task T3 with 2 duration
+        Task('T4', 7)   # Define task T4 with 7 duration
+    ]
+
+    task_map = {task.id: task for task in tasks}  # Create a dictionary to map task IDs to task objects
+    task_map['T_START'].successors = ['T1', 'T2']  # Define successors for the start task
+    task_map['T1'].predecessors.append('T_START')  # Define predecessors for task T1
+    task_map['T1'].successors = ['T3']  # Define successors for task T1
+    task_map['T2'].predecessors.append('T_START')  # Define predecessors for task T2
+    task_map['T2'].successors = ['T4']  # Define successors for task T2
+    task_map['T3'].predecessors.append('T1')  # Define predecessors for task T3
+    task_map['T3'].successors = ['T4']  # Define successors for task T3
+    task_map['T4'].predecessors.extend(['T2', 'T3'])  # Define predecessors for task T4
+
+    calculate_times(tasks)  # Call the function to calculate times
+    
+    project_finish_time = max(task.EFT for task in tasks)  # Calculate the project finish time
+    print(f"Earliest completion time: {project_finish_time}")  # Print the earliest completion time
+    print(f"Latest completion time: {project_finish_time}")  # Print the latest completion time
