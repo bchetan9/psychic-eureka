@@ -1,0 +1,75 @@
+from collections import deque  # Import deque from collections for efficient queue operations
+
+class SocialNetwork:
+    def __init__(self):
+        self.friends_map = {}  # Initialize an empty dictionary to store friendships
+
+    def add_friendship(self, person1, person2):
+        # If person1 is not in the friends_map, add them with an empty set of friends
+        if person1 not in self.friends_map:
+            self.friends_map[person1] = set()
+        # If person2 is not in the friends_map, add them with an empty set of friends
+        if person2 not in self.friends_map:
+            self.friends_map[person2] = set()
+        # Add person2 to the set of friends of person1
+        self.friends_map[person1].add(person2)
+        # Add person1 to the set of friends of person2
+        self.friends_map[person2].add(person1)
+
+    def find_common_friends(self, person1, person2):
+        # Check if both persons are in the friends_map
+        if person1 in self.friends_map and person2 in self.friends_map:
+            # Return the intersection of their friends sets
+            return self.friends_map[person1].intersection(self.friends_map[person2])
+        return set()  # Return an empty set if either person is not in the friends_map
+
+    def nth_connection(self, person1, person2):
+        # If either person is not in the friends_map, return -1
+        if person1 not in self.friends_map or person2 not in self.friends_map:
+            return -1
+        
+        visited = set()  # Create a set to keep track of visited persons
+        queue = deque([(person1, 0)])  # Initialize a queue with the starting person and depth 0
+
+        while queue:
+            current_person, depth = queue.popleft()  # Dequeue the first element
+            
+            if current_person == person2:  # If the current person is the target person
+                return depth  # Return the current depth
+            
+            visited.add(current_person)  # Mark the current person as visited
+            
+            for friend in self.friends_map[current_person]:  # Iterate over all friends of the current person
+                if friend not in visited:  # If the friend has not been visited
+                    queue.append((friend, depth + 1))  # Enqueue the friend with depth incremented by 1
+                    visited.add(friend)  # Mark the friend as visited
+        
+        return -1  # Return -1 if there is no connection between the two persons
+
+# Example usage
+if __name__ == "__main__":
+    # Create the social network
+    network = SocialNetwork()
+
+    # Add friendships
+    network.add_friendship("Alice", "Bob")
+    network.add_friendship("Alice", "Charlie")
+    network.add_friendship("Bob", "David")
+    network.add_friendship("Charlie", "David")
+    network.add_friendship("David", "Janice")
+
+    # Find common friends between Alice and Bob
+    common_friends = network.find_common_friends("Alice", "Bob")
+    print(f"Common friends of Alice and Bob: {common_friends}")
+
+    # Find nth connection between Alice and Janice
+    connection = network.nth_connection("Alice", "Janice")
+    print(f"Connection between Alice and Janice: {connection}")
+
+    # Find nth connection between Alice and Bob
+    connection = network.nth_connection("Alice", "Bob")
+    print(f"Connection between Alice and Bob: {connection}")
+
+    # Find nth connection between Alice and someone not connected
+    connection = network.nth_connection("Alice", "Eve")
+    print(f"Connection between Alice and Eve: {connection}")
